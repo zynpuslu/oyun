@@ -1,0 +1,121 @@
+public class PlayerMovement : MonoBehaviour
+{
+    public float moveSpeed = 5f;
+    public float jumpForce = 12f;
+    private Rigidbody2D rb;
+    private bool isGrounded;
+
+    void Start()
+    {
+        rb = GetComponent<Rigidbody2D>();
+    }
+
+    void Update()
+    {
+        float moveInput = Input.GetAxis("Horizontal");
+        rb.velocity = new Vector2(moveInput * moveSpeed, rb.velocity.y);
+
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
+        {
+            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+        }
+    }
+
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Ground") || 
+            collision.gameObject.CompareTag("PlatformRed") ||
+            collision.gameObject.CompareTag("PlatformYellow") ||
+            collision.gameObject.CompareTag("PlatformGreen"))
+        {
+            isGrounded = true;
+        }
+    }
+
+    void OnCollisionExit2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Ground") || 
+            collision.gameObject.CompareTag("PlatformRed") ||
+            collision.gameObject.CompareTag("PlatformYellow") ||
+            collision.gameObject.CompareTag("PlatformGreen"))
+        {
+            isGrounded = false;
+        }
+    }
+}
+
+
+
+
+
+public class PlatformManager : MonoBehaviour
+{
+    public static PlatformManager Instance;
+
+    private GameObject[] redPlatforms;
+    private GameObject[] yellowPlatforms;
+    private GameObject[] greenPlatforms;
+
+    void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+
+        redPlatforms = GameObject.FindGameObjectsWithTag("PlatformRed");
+        yellowPlatforms = GameObject.FindGameObjectsWithTag("PlatformYellow");
+        greenPlatforms = GameObject.FindGameObjectsWithTag("PlatformGreen");
+    }
+
+    public void UpdatePlatforms(PlayerController.ColorState activeColor)
+    {
+        SetPlatformActive(redPlatforms, activeColor != PlayerController.ColorState.Red);
+        SetPlatformActive(yellowPlatforms, activeColor != PlayerController.ColorState.Yellow);
+        SetPlatformActive(greenPlatforms, activeColor != PlayerController.ColorState.Green);
+    }
+
+    void SetPlatformActive(GameObject[] platforms, bool isActive)
+    {
+        foreach (GameObject platform in platforms)
+        {
+            platform.SetActive(isActive);
+        }
+    }
+}
+
+
+
+
+
+
+public class PlayerController : MonoBehaviour
+{
+    public enum ColorState { Red, Yellow, Green }
+    public ColorState currentColor = ColorState.Red;
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            ChangeColor(ColorState.Red);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            ChangeColor(ColorState.Yellow);
+        }
+        else if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            ChangeColor(ColorState.Green);
+        }
+    }
+
+    void ChangeColor(ColorState newColor)
+    {
+        currentColor = newColor;
+        Debug.Log("Color changed to: " + currentColor);
+
+        // Platformların durumunu güncelle
+        PlatformManager.Instance.UpdatePlatforms(currentColor);
+    }
+}
